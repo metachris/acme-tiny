@@ -5,7 +5,6 @@ try:
 except ImportError:
     from urllib2 import urlopen # Python 2
 
-#DEFAULT_CA = "https://acme-staging.api.letsencrypt.org"
 DEFAULT_CA = "https://acme-v01.api.letsencrypt.org"
 
 LOGGER = logging.getLogger(__name__)
@@ -194,11 +193,8 @@ def main(argv):
     LOGGER.setLevel(args.quiet or LOGGER.level)
     signed_crt = get_crt(args.account_key, args.csr, args.acme_dir, log=LOGGER, CA=args.ca)
 
-    if args.output:
-        with open(args.output, "w") as f:
-            f.write(signed_crt)
-    else:
-        sys.stdout.write(signed_crt)
+    with open(args.output, 'w') if args.output else sys.stdout as f:
+        f.write(signed_crt)
 
 if __name__ == "__main__": # pragma: no cover
     main(sys.argv[1:])

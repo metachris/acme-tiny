@@ -24,7 +24,7 @@ class TestModule(unittest.TestCase):
         os.rmdir(self.tempdir)
 
     def test_success_cn(self):
-        """ Successfully issue a certficate via common name """
+        """ Successfully issue a certficate via common name, stdout """
         old_stdout = sys.stdout
         sys.stdout = StringIO()
         result = acme_tiny.main([
@@ -36,6 +36,22 @@ class TestModule(unittest.TestCase):
         sys.stdout.seek(0)
         crt = sys.stdout.read().encode("utf8")
         sys.stdout = old_stdout
+        out, err = Popen(["openssl", "x509", "-text", "-noout"], stdin=PIPE,
+            stdout=PIPE, stderr=PIPE).communicate(crt)
+        self.assertIn("Issuer: CN=happy hacker fake CA", out.decode("utf8"))
+
+    def test_success_cn_with_file_output(self):
+        """ Successfully issue a certficate via common name, file output """
+        output_file = tempfile.NamedTemporaryFile()
+        result = acme_tiny.main([
+            "--account-key", KEYS['account_key'].name,
+            "--csr", KEYS['domain_csr'].name,
+            "--acme-dir", self.tempdir,
+            "--ca", self.CA,
+            "--output", output_file.name,
+        ])
+        output_file.seek(0)
+        crt = output_file.read().encode("utf8")
         out, err = Popen(["openssl", "x509", "-text", "-noout"], stdin=PIPE,
             stdout=PIPE, stderr=PIPE).communicate(crt)
         self.assertIn("Issuer: CN=happy hacker fake CA", out.decode("utf8"))
@@ -153,4 +169,3 @@ class TestModule(unittest.TestCase):
             result = e
         self.assertIsInstance(result, ValueError)
         self.assertIn("Certificate public key must be different than account key", result.args[0])
-
